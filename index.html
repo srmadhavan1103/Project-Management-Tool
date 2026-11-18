@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamFlow | Project Management</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <h2>TeamFlow</h2>
+            <p class="muted">Project workspace</p>
+
+            <h3>Projects</h3>
+            <form id="projectform">
+                <input id="projectname" placeholder="Project Name" required>
+                <button class="primary" type="submit">+ Add Project</button>
+            </form>
+
+            <div id="projectlist"></div>
+            <hr>
+
+            <h3>Team Members</h3>
+            <form id="memberform">
+                <input id="membername" placeholder="Memebr name" required>
+                <button class="secondary" type="submit">+ Add Member</button>
+            </form>
+            <div id="memberlist"></div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <h1 id="projecttitle">Welcome to TeamFlow</h1>
+                    <p class="muted">Manage your team's work in one place.</p>
+                </div>
+                <button id="newtaskbtn" class="primary">+ New Task</button>
+            </header>
+
+            <section class="progress-card">
+                <div class="progress-head">
+                    <strong>Project Progress</strong>
+                    <span id="progresstext">0%</span>
+                </div>
+
+                <div class="progress-track">
+                    <div id="progressbar"></div>
+                </div>
+
+                <p id="tasksummary" class="muted">0 tasks completed</p>
+            </section>
+
+            <section  class="board">
+                <div class="column" data-status="todo">
+                    <h3>📋 To Do <span id="count-todo">0</span></h3>
+                    <div class="task-list" id="todolist"></div>
+                </div>
+
+                <div class="column" data-status="inprogress">
+                    <h3>⚡ In Progress <span id="count-inprogress">0</span></h3>
+                    <div class="task-list" id="inprogresslist"></div>
+                </div>
+
+                <div class="column" data-status="done">
+                    <h3>✅ Done <span id="count-done">0</span></h3>
+                    <div class="task-list" id="doneList"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <dialog id="taskdialog">
+        <form id="taskform">
+            <h2 id="formtitle">Create a Task</h2>
+
+            <label for="tasktitle">Task Title</label>
+            <input id="tasktitle" required placeholder="e.g. Design login page">
+
+            <label for="taskdescription">Description</label>
+            <textarea id="taskdescription" placeholder="Task deatils"></textarea>
+
+            <label for="taskassignee">Assign To</label>
+            <select id="taskassignee">
+                <option value="">Unassigned</option>
+            </select>
+
+            <label for="taskdeadline">Deadline</label>
+            <input id="taskdeadline" type="date">
+            
+            <label for="taskpriority">Priority</label>
+            <select id="taskpriority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+            </select>
+
+            <label for="taskStatus">Status</label>
+            <select id="taskStatus">
+                <option value="todo">To Do</option>
+                <option value="inprogress">In Progress</option>
+                <option value="done">Done</option>
+            </select>
+
+            <div class="form-actions">
+                <button type="submit" class="primary">Save Task</button>
+                <button type="button" id="cancelBtn" class="secondary">
+                Cancel
+                </button>
+            </div>
+        </form>
+    </dialog>
+</body>
+</html>
