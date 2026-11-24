@@ -1,36 +1,49 @@
+
 "use strict";
 
-const storage_key="teamflow_data";
 
-function loadData(){
-    try{
-        const saved=localStorage.getItem(storage_key);
-        if(saved){
-            const data=JSON.parse(saved);
-            if(
+const storage_key = "teamflow_data";
+
+function loadData() {
+    try {
+        const saved = localStorage.getItem(storage_key);
+
+        if (saved) {
+            const data = JSON.parse(saved);
+
+            if (
                 Array.isArray(data.projects) &&
                 Array.isArray(data.members) &&
                 Array.isArray(data.tasks)
-            )
-            {
+            ) {
                 return data;
             }
         }
-    }
-    catch(error){
+    } catch (error) {
         console.error("Could not load saved data:", error);
-
     }
-    return{
-        projects:[],
-        members:[],
-        tasks:[]
+
+    return {
+        projects: [],
+        members: [],
+        tasks: []
     };
 }
 
 let state = loadData();
+
 let activeProjectId = state.projects[0]?.id || null;
 let editingTaskId = null;
+
+function saveData() {
+    try {
+        localStorage.setItem(storage_key, JSON.stringify(state));
+    } catch (error) {
+        console.error("Could not save data:", error);
+        alert("Unable to save data in this browser.");
+    }
+}
+
 
 
 const projectForm = document.getElementById("projectform");
@@ -39,32 +52,34 @@ const projectsList = document.getElementById("projectlist");
 
 const memberForm = document.getElementById("memberform");
 const memberName = document.getElementById("membername");
-const membersList = document.getElementById("memberslist");
+const membersList = document.getElementById("memberlist");
 
 const projectTitle = document.getElementById("projecttitle");
-const newTaskBtn = document.getElementById("newTaskbtn");
+const newTaskBtn = document.getElementById("newtaskbtn");
 
 const taskDialog = document.getElementById("taskdialog");
 const taskForm = document.getElementById("taskform");
 const formTitle = document.getElementById("formtitle");
+
 const taskTitle = document.getElementById("tasktitle");
 const taskDescription = document.getElementById("taskdescription");
 const taskAssignee = document.getElementById("taskassignee");
 const taskDeadline = document.getElementById("taskdeadline");
 const taskPriority = document.getElementById("taskpriority");
-const taskStatus = document.getElementById("taskstatus");
-const cancelBtn = document.getElementById("cancelbtn");
+const taskStatus = document.getElementById("taskStatus");
+
+const cancelBtn = document.getElementById("cancelBtn");
 
 const columns = {
-  todo: document.getElementById("todolist"),
-  inprogress: document.getElementById("inprogresslist"),
-  done: document.getElementById("donelist")
+    todo: document.getElementById("todolist"),
+    inprogress: document.getElementById("inprogresslist"),
+    done: document.getElementById("doneList")
 };
 
 const counts = {
-  todo: document.getElementById("count-todo"),
-  inprogress: document.getElementById("count-inprogress"),
-  done: document.getElementById("count-done")
+    todo: document.getElementById("count-todo"),
+    inprogress: document.getElementById("count-inprogress"),
+    done: document.getElementById("count-done")
 };
 
 const progressBar = document.getElementById("progressbar");
@@ -72,405 +87,432 @@ const progressText = document.getElementById("progresstext");
 const taskSummary = document.getElementById("tasksummary");
 
 
-function createId() {
-  return crypto.randomUUID();
-}
 
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function createId() {
+    return crypto.randomUUID();
 }
 
 function escapeHTML(value = "") {
-  return String(value).replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[character]);
+    return String(value).replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
 }
 
 function getActiveProject() {
-  return state.projects.find(
-    project => project.id === activeProjectId
-  );
+    return state.projects.find(
+        project => project.id === activeProjectId
+    );
 }
-
-
 
 function getMemberName(memberId) {
-  const member = state.members.find(
-    item => item.id === memberId
-  );
+    const member = state.members.find(
+        item => item.id === memberId
+    );
 
-  return member ? member.name : "Unassigned";
+    return member ? member.name : "Unassigned";
 }
 
+
+
 projectForm.addEventListener("submit", event => {
-  event.preventDefault();
+    event.preventDefault();
 
-  const name = projectName.value.trim();
+    const name = projectName.value.trim();
 
-  if (!name) return;
+    if (!name) return;
 
-  const project = {
-    id: createId(),
-    name: name
-  };
+    const project = {
+        id: createId(),
+        name: name
+    };
 
-  state.projects.push(project);
+    state.projects.push(project);
+    activeProjectId = project.id;
 
-  activeProjectId = project.id;
+    saveData();
+    projectForm.reset();
 
-  saveData();
-  projectForm.reset();
-  renderAll();
+    renderAll();
 });
 
 
-
 function renderProjects() {
-  projectsList.innerHTML = "";
+    projectsList.innerHTML = "";
 
-  state.projects.forEach(project => {
-    const item = document.createElement("div");
+    state.projects.forEach(project => {
+        const item = document.createElement("div");
 
-    item.className =
-      "project-item" +
-      (project.id === activeProjectId ? " active" : "");
+        item.className =
+            "project-item" +
+            (project.id === activeProjectId ? " active" : "");
 
-    item.innerHTML = `
-      <div class="project-name">${escapeHTML(project.name)}</div>
-      <button type="button" class="delete-project">
-        Delete
-      </button>
-    `;
+        item.innerHTML = `
+            <div class="project-name">
+                ${escapeHTML(project.name)}
+            </div>
 
-    item.addEventListener("click", event => {
-      if (event.target.closest(".delete-project")) return;
+            <button type="button" class="delete-project">
+                Delete
+            </button>
+        `;
 
-      activeProjectId = project.id;
-      renderAll();
+        item.addEventListener("click", event => {
+            if (event.target.closest(".delete-project")) return;
+
+            activeProjectId = project.id;
+            renderAll();
+        });
+
+        item.querySelector(".delete-project").addEventListener(
+            "click",
+            () => {
+                if (!confirm(`Delete "${project.name}" and its tasks?`)) {
+                    return;
+                }
+
+                state.projects = state.projects.filter(
+                    item => item.id !== project.id
+                );
+
+                state.tasks = state.tasks.filter(
+                    task => task.projectId !== project.id
+                );
+
+                if (activeProjectId === project.id) {
+                    activeProjectId = state.projects[0]?.id || null;
+                }
+
+                saveData();
+                renderAll();
+            }
+        );
+
+        projectsList.appendChild(item);
     });
-
-    item.querySelector(".delete-project").addEventListener(
-      "click",
-      () => {
-        if (!confirm(`Delete "${project.name}" and its tasks?`)) {
-          return;
-        }
-
-        state.projects = state.projects.filter(
-          item => item.id !== project.id
-        );
-
-        state.tasks = state.tasks.filter(
-          task => task.projectId !== project.id
-        );
-
-        if (activeProjectId === project.id) {
-          activeProjectId = state.projects[0]?.id || null;
-        }
-
-        saveData();
-        renderAll();
-      }
-    );
-
-    projectsList.appendChild(item);
-  });
 }
+
 
 
 
 memberForm.addEventListener("submit", event => {
-  event.preventDefault();
+    event.preventDefault();
 
-  const name = memberName.value.trim();
+    const name = memberName.value.trim();
 
-  if (!name) return;
+    if (!name) return;
 
-  state.members.push({
-    id: createId(),
-    name: name
-  });
+    state.members.push({
+        id: createId(),
+        name: name
+    });
 
-  saveData();
-  memberForm.reset();
-  renderAll();
+    saveData();
+    memberForm.reset();
+
+    renderAll();
 });
 
 
+
 function renderMembers() {
-  membersList.innerHTML = "";
+    membersList.innerHTML = "";
 
-  state.members.forEach(member => {
-    const item = document.createElement("div");
-    item.className = "member-item";
+    state.members.forEach(member => {
+        const item = document.createElement("div");
 
-    item.innerHTML = `
-      <span>${escapeHTML(member.name)}</span>
-      <button type="button" class="remove-member">
-        Remove
-      </button>
-    `;
+        item.className = "member-item";
 
-    item.querySelector(".remove-member").addEventListener(
-      "click",
-      () => {
-        if (!confirm(`Remove ${member.name} from the team?`)) {
-          return;
-        }
+        item.innerHTML = `
+            <span>${escapeHTML(member.name)}</span>
 
-        state.members = state.members.filter(
-          item => item.id !== member.id
+            <button type="button" class="remove-member">
+                Remove
+            </button>
+        `;
+
+        item.querySelector(".remove-member").addEventListener(
+            "click",
+            () => {
+                if (!confirm(`Remove ${member.name} from the team?`)) {
+                    return;
+                }
+
+                state.members = state.members.filter(
+                    item => item.id !== member.id
+                );
+
+                state.tasks.forEach(task => {
+                    if (task.assignee === member.id) {
+                        task.assignee = "";
+                    }
+                });
+
+                saveData();
+                renderAll();
+            }
         );
 
-        // Unassign tasks belonging to this member.
-        state.tasks.forEach(task => {
-          if (task.assignee === member.id) {
-            task.assignee = "";
-          }
-        });
+        membersList.appendChild(item);
+    });
 
-        saveData();
-        renderAll();
-      }
-    );
+   
+    taskAssignee.innerHTML =
+        '<option value="">Unassigned</option>';
 
-    membersList.appendChild(item);
-  });
+    state.members.forEach(member => {
+        const option = document.createElement("option");
 
-  taskAssignee.innerHTML =
-    '<option value="">Unassigned</option>';
+        option.value = member.id;
+        option.textContent = member.name;
 
-  state.members.forEach(member => {
-    const option = document.createElement("option");
-    option.value = member.id;
-    option.textContent = member.name;
-    taskAssignee.appendChild(option);
-  });
+        taskAssignee.appendChild(option);
+    });
 }
+
 
 
 
 newTaskBtn.addEventListener("click", () => {
-  if (!activeProjectId) {
-    alert("Create or select a project first.");
-    return;
-  }
+    if (!activeProjectId) {
+        alert("Create or select a project first.");
+        return;
+    }
 
-  openTaskForm();
+    openTaskForm();
 });
 
 function openTaskForm(task = null) {
-  editingTaskId = task ? task.id : null;
+    editingTaskId = task ? task.id : null;
 
-  taskForm.reset();
+    taskForm.reset();
 
-  formTitle.textContent = task ? "Edit Task" : "Create a Task";
+    formTitle.textContent = task
+        ? "Edit Task"
+        : "Create a Task";
 
-  taskTitle.value = task ? task.title : "";
-  taskDescription.value = task ? task.description : "";
-  taskAssignee.value = task ? task.assignee : "";
-  taskDeadline.value = task ? task.deadline : "";
-  taskPriority.value = task ? task.priority : "medium";
-  taskStatus.value = task ? task.status : "todo";
+    taskTitle.value = task ? task.title : "";
+    taskDescription.value = task ? task.description : "";
+    taskAssignee.value = task ? task.assignee : "";
+    taskDeadline.value = task ? task.deadline : "";
+    taskPriority.value = task ? task.priority : "medium";
+    taskStatus.value = task ? task.status : "todo";
 
-  taskDialog.showModal();
+    taskDialog.showModal();
 }
 
+
+
+
 cancelBtn.addEventListener("click", () => {
-  taskDialog.close();
+    taskDialog.close();
+    editingTaskId = null;
 });
-
-
 
 
 
 taskForm.addEventListener("submit", event => {
-  event.preventDefault();
+    event.preventDefault();
 
-  if (!activeProjectId) return;
+    if (!activeProjectId) return;
 
-  const title = taskTitle.value.trim();
+    const title = taskTitle.value.trim();
 
-  if (!title) return;
+    if (!title) return;
 
-  const taskData = {
-    title: title,
-    description: taskDescription.value.trim(),
-    assignee: taskAssignee.value,
-    deadline: taskDeadline.value,
-    priority: taskPriority.value,
-    status: taskStatus.value
-  };
+    const taskData = {
+        title: title,
+        description: taskDescription.value.trim(),
+        assignee: taskAssignee.value,
+        deadline: taskDeadline.value,
+        priority: taskPriority.value,
+        status: taskStatus.value
+    };
 
-  if (editingTaskId) {
-    const task = state.tasks.find(
-      item => item.id === editingTaskId
-    );
+    if (editingTaskId) {
+        const task = state.tasks.find(
+            item => item.id === editingTaskId
+        );
 
-    if (task) {
-      Object.assign(task, taskData);
+        if (task) {
+            Object.assign(task, taskData);
+        }
+    } else {
+        state.tasks.push({
+            id: createId(),
+            projectId: activeProjectId,
+            ...taskData
+        });
     }
-  } else {
-    state.tasks.push({
-      id: createId(),
-      projectId: activeProjectId,
-      ...taskData
-    });
-  }
 
-  saveData();
-  taskDialog.close();
-  renderAll();
+    saveData();
+
+    taskDialog.close();
+    editingTaskId = null;
+
+    renderAll();
 });
 
 
 
-
 function renderTasks() {
-  Object.values(columns).forEach(column => {
-    column.innerHTML = "";
-  });
-
-  Object.values(counts).forEach(count => {
-    count.textContent = "0";
-  });
-
-  const project = getActiveProject();
-
-  if (!project) {
-    projectTitle.textContent = "Welcome to TeamFlow";
-    updateProgress([]);
-    return;
-  }
-
-  projectTitle.textContent = project.name;
-
-  const tasks = state.tasks.filter(
-    task => task.projectId === activeProjectId
-  );
-
-  tasks.forEach(task => {
-    const card = document.createElement("article");
-
-    card.className = "task-card";
-    card.draggable = true;
-
-    card.innerHTML = `
-      <span class="priority ${escapeHTML(task.priority)}">
-        ${escapeHTML(task.priority.toUpperCase())} PRIORITY
-      </span>
-
-      <h4>${escapeHTML(task.title)}</h4>
-
-      <p>${escapeHTML(task.description || "No description")}</p>
-
-      <p>👤 ${escapeHTML(getMemberName(task.assignee))}</p>
-
-      <p>📅 ${escapeHTML(task.deadline || "No deadline")}</p>
-
-      <div class="task-actions">
-        <button type="button" class="edit-btn">Edit</button>
-        <button type="button" class="delete-btn">Delete</button>
-      </div>
-    `;
-
-    card.addEventListener("dragstart", event => {
-      event.dataTransfer.setData("text/plain", task.id);
-      event.dataTransfer.effectAllowed = "move";
-      card.classList.add("dragging");
+    Object.values(columns).forEach(column => {
+        column.innerHTML = "";
     });
 
-    card.addEventListener("dragend", () => {
-      card.classList.remove("dragging");
+    Object.values(counts).forEach(count => {
+        count.textContent = "0";
     });
 
-    card.querySelector(".edit-btn").addEventListener(
-      "click",
-      () => openTaskForm(task)
+    const project = getActiveProject();
+
+    if (!project) {
+        projectTitle.textContent = "Welcome to TeamFlow";
+        updateProgress([]);
+        return;
+    }
+
+    projectTitle.textContent = project.name;
+
+    const tasks = state.tasks.filter(
+        task => task.projectId === activeProjectId
     );
 
-    card.querySelector(".delete-btn").addEventListener(
-      "click",
-      () => {
-        if (!confirm(`Delete "${task.title}"?`)) return;
+    tasks.forEach(task => {
+        const card = document.createElement("article");
 
-        state.tasks = state.tasks.filter(
-          item => item.id !== task.id
+        card.className = "task-card";
+        card.draggable = true;
+
+        const status = columns[task.status]
+            ? task.status
+            : "todo";
+
+        card.innerHTML = `
+            <span class="priority ${escapeHTML(task.priority)}">
+                ${escapeHTML(task.priority.toUpperCase())} PRIORITY
+            </span>
+
+            <h4>${escapeHTML(task.title)}</h4>
+
+            <p>${escapeHTML(task.description || "No description")}</p>
+
+            <p>👤 ${escapeHTML(getMemberName(task.assignee))}</p>
+
+            <p>📅 ${escapeHTML(task.deadline || "No deadline")}</p>
+
+            <div class="task-actions">
+                <button type="button" class="edit-btn">Edit</button>
+
+                <button type="button" class="delete-btn">Delete</button>
+            </div>
+        `;
+
+     
+        card.addEventListener("dragstart", event => {
+            event.dataTransfer.setData("text/plain", task.id);
+            event.dataTransfer.effectAllowed = "move";
+
+            card.classList.add("dragging");
+        });
+
+        card.addEventListener("dragend", () => {
+            card.classList.remove("dragging");
+        });
+
+      
+        card.querySelector(".edit-btn").addEventListener(
+            "click",
+            () => openTaskForm(task)
         );
 
-        saveData();
-        renderAll();
-      }
-    );
+        
+        card.querySelector(".delete-btn").addEventListener(
+            "click",
+            () => {
+                if (!confirm(`Delete "${task.title}"?`)) return;
 
-    const destination = columns[task.status] || columns.todo;
-    destination.appendChild(card);
+                state.tasks = state.tasks.filter(
+                    item => item.id !== task.id
+                );
 
-    counts[task.status].textContent =
-      Number(counts[task.status].textContent) + 1;
-  });
+                saveData();
+                renderAll();
+            }
+        );
 
-  updateProgress(tasks);
+        columns[status].appendChild(card);
+
+        counts[status].textContent =
+            Number(counts[status].textContent) + 1;
+    });
+
+    updateProgress(tasks);
 }
 
 
 
 document.querySelectorAll(".column").forEach(column => {
-  column.addEventListener("dragover", event => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  });
 
-  column.addEventListener("drop", event => {
-    event.preventDefault();
+    column.addEventListener("dragover", event => {
+        event.preventDefault();
 
-    const taskId = event.dataTransfer.getData("text/plain");
-    const newStatus = column.dataset.status;
+        event.dataTransfer.dropEffect = "move";
+    });
 
-    const task = state.tasks.find(
-      item => item.id === taskId
-    );
+    column.addEventListener("drop", event => {
+        event.preventDefault();
 
-    if (!task || task.projectId !== activeProjectId) return;
+        const taskId = event.dataTransfer.getData("text/plain");
+        const newStatus = column.dataset.status;
 
-    task.status = newStatus;
+        const task = state.tasks.find(
+            item => item.id === taskId
+        );
 
-    saveData();
-    renderAll();
-  });
+        if (!task || task.projectId !== activeProjectId) return;
+
+        if (!columns[newStatus]) return;
+
+        task.status = newStatus;
+
+        saveData();
+        renderAll();
+    });
+
 });
 
 
 
-
 function updateProgress(tasks) {
-  const total = tasks.length;
+    const total = tasks.length;
 
-  const completed = tasks.filter(
-    task => task.status === "done"
-  ).length;
+    const completed = tasks.filter(
+        task => task.status === "done"
+    ).length;
 
-  const percentage = total
-    ? Math.round((completed / total) * 100)
-    : 0;
+    const percentage = total
+        ? Math.round((completed / total) * 100)
+        : 0;
 
-  progressBar.style.width = `${percentage}%`;
-  progressText.textContent = `${percentage}%`;
+    progressBar.style.width = `${percentage}%`;
 
-  taskSummary.textContent =
-    `${completed} of ${total} tasks completed`;
+    progressText.textContent = `${percentage}%`;
+
+    taskSummary.textContent =
+        `${completed} of ${total} tasks completed`;
 }
 
 
 
 function renderAll() {
-  renderProjects();
-  renderMembers();
-  renderTasks();
+    renderProjects();
+    renderMembers();
+    renderTasks();
 }
+
 
 renderAll();
